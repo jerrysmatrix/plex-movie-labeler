@@ -1,0 +1,23 @@
+{
+  "name": "plex-tmdb-sync",
+  "version": "0.1.0",
+  "description": "Sync TMDB keywords into Plex movie labels.",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js"
+  },
+  "keywords": [
+    "plex",
+    "tmdb",
+    "metadata",
+    "labels",
+    "keywords"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "axios": "^1.7.2",
+    "dotenv": "^16.4.5",
+    "fast-xml-parser": "^4.4.1"
+  }
+}
