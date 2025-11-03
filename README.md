@@ -31,6 +31,12 @@ npm start
 
 Logs are written to the console with per-movie detail. Rerun the script as needed; keywords that are already present are skipped.
 
+### Preserve a Curated Hub into Labels
+```bash
+node src/preserve.js --hub "Fearmongers" --label "Fearmongers"
+```
+Logs include the hub XML (preview + full), parsed count, and per‑movie updates. `DRY_RUN=true` previews changes. You can cap work with `LIMIT_RUN_SIZE`.
+
 ## Notes
 - The script only adds keywords that are missing. It does not remove existing labels that are no longer present on TMDB.
 - Plex rate-limits metadata updates; if you have a very large library consider breaking runs up by library name.
