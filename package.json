@@ -4,6 +4,10 @@
   "description": "Sync TMDB keywords into Plex movie labels.",
   "main": "src/index.js",
   "scripts": {
+    "format": "prettier . -w",
+    "format:check": "prettier . -c",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
     "start": "node src/index.js"
   },
   "keywords": [
@@ -19,5 +23,11 @@
     "axios": "^1.7.2",
     "dotenv": "^16.4.5",
     "fast-xml-parser": "^4.4.1"
+  },
+  "devDependencies": {
+    "eslint": "^9.39.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-prettier": "^5.5.4",
+    "prettier": "^3.6.2"
   }
 }
