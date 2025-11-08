@@ -42,6 +42,14 @@ Syncs TMDB keywords into Plex movie labels. Requires `TMDB_API_KEY`.
 npm start
 ```
 
+Fast mode (skip movies that already have labels):
+
+```bash
+npm start -- --fast
+```
+
+Fast mode scans newest items first and stops early after a long labeled-only streak. Combine with `LIMIT_RUN_SIZE` to bound work.
+
 Respects `PLEX_LIBRARY_NAMES`, `DRY_RUN`, and `LIMIT_RUN_SIZE`. Already-present labels are skipped; nothing is removed.
 
 ## Curated Hubs

@@ -12,6 +12,9 @@ if (missing.length > 0) {
 	process.exit(1);
 }
 
+const ARGS = new Set(process.argv.slice(2)),
+	FAST_MODE = ARGS.has('--fast');
+
 const PLEX_BASE_URL = process.env.PLEX_BASE_URL.replace(/\/+$/, ''),
 	PLEX_TOKEN = process.env.PLEX_TOKEN,
 	TMDB_API_KEY = process.env.TMDB_API_KEY,
@@ -48,6 +51,10 @@ async function main() {
 		console.log(`Limiting processing to ${LIMIT_RUN_SIZE} movie${LIMIT_RUN_SIZE === 1 ? '' : 's'} per library.`);
 	}
 
+	if (FAST_MODE) {
+		console.log('Fast mode enabled: skipping movies that already have labels.');
+	}
+
 	const libraries = await fetchMovieLibraries();
 
 	if (libraries.length === 0) {
@@ -63,9 +70,11 @@ async function main() {
 	for (const library of libraries) {
 		console.log(`Processing library '${library.title}' (key: ${library.key})`);
 
-		const movies = await fetchLibraryMovies(library.key, LIMIT_RUN_SIZE);
+		const movies = await fetchLibraryMovies(library.key, LIMIT_RUN_SIZE, { fastMode: FAST_MODE });
 
-		if (LIMIT_RUN_SIZE != null) {
+		if (FAST_MODE) {
+			console.log(`Fast mode: processing ${movies.length} movie${movies.length === 1 ? '' : 's'} with no labels in '${library.title}'.`);
+		} else if (LIMIT_RUN_SIZE != null) {
 			console.log(`Found ${movies.length} movie${movies.length === 1 ? '' : 's'} limited from '${library.title}'.`);
 		} else {
 			console.log(`Found ${movies.length} movies in '${library.title}'.`);
@@ -107,23 +116,30 @@ async function fetchMovieLibraries() {
 		}));
 }
 
-async function fetchLibraryMovies(sectionKey, limit = null) {
+async function fetchLibraryMovies(sectionKey, limit = null, options = {}) {
+	const { fastMode = false } = options;
+
 	const movies = [],
 		pageSize = 200;
 
 	let start = 0,
-		totalSize = Infinity;
+		totalSize = Infinity,
+		consecutiveLabeled = 0;
 
 	while (start < totalSize && (limit == null || movies.length < limit)) {
-		const response = await plexClient.get(`/library/sections/${sectionKey}/all`, {
-			params: {
-				'X-Plex-Container-Start': start,
-				'X-Plex-Container-Size': pageSize,
-				includeGuids: 1,
-				includeFields: 'guid',
-				includeLabels: 1
-			}
-		});
+		const params = {
+			'X-Plex-Container-Start': start,
+			'X-Plex-Container-Size': pageSize,
+			includeGuids: 1,
+			includeFields: 'guid',
+			includeLabels: 1
+		};
+
+		if (fastMode) {
+			params.sort = 'addedAt:desc';
+		}
+
+		const response = await plexClient.get(`/library/sections/${sectionKey}/all`, { params });
 
 		const parsed = xmlParser.parse(response.data),
 			container = parsed?.MediaContainer,
@@ -138,12 +154,21 @@ async function fetchLibraryMovies(sectionKey, limit = null) {
 		}
 
 		for (const video of videos) {
+			const labels = extractLabels(video);
+
+			if (fastMode && labels.length > 0) {
+				consecutiveLabeled += 1;
+				continue;
+			}
+
+			consecutiveLabeled = 0;
+
 			movies.push({
 				ratingKey: video.ratingKey,
 				title: video.title,
 				year: video.year,
 				guids: extractGuids(video),
-				labels: extractLabels(video),
+				labels,
 				librarySectionKey: sectionKey,
 				librarySectionId: video.librarySectionID ?? container?.librarySectionID,
 				type: video.type,
@@ -156,6 +181,10 @@ async function fetchLibraryMovies(sectionKey, limit = null) {
 		}
 
 		if (videos.length === 0) {
+			break;
+		}
+
+		if (fastMode && consecutiveLabeled >= pageSize * 2) {
 			break;
 		}
 
