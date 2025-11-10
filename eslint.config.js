@@ -13,9 +13,11 @@ module.exports = [
 		plugins: {
 			local: localPlugin
 		},
-		rules: {
+	rules: {
 			// Keep console usage allowed for this project
 			'no-console': 'off',
+			// Require braces for all control statements
+			'curly': ['error', 'all'],
 			// Ensure a blank line before and after any block-like statement
 			'padding-line-between-statements': [
 				'error',
